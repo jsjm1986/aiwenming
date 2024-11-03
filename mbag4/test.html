@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文明AI测试</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --background-dark: #1a1a1a;
+            --panel-bg: rgba(30, 30, 30, 0.95);
+            --text-color: #ffffff;
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-dark);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        #testInterface {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .test-panel {
+            background: var(--panel-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #eventInput {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        #submitEvent {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #submitEvent:hover {
+            background: #45a049;
+        }
+
+        #responsesPanel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .civilization-response {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            border-left: 4px solid;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .thinking {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            margin-bottom: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .response-content {
+            font-size: 14px;
+        }
+
+        .response-section {
+            margin-bottom: 15px;
+        }
+
+        .response-section h4 {
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .action-list, .policy-list {
+            list-style: none;
+        }
+
+        .action-list li, .policy-list li {
+            margin-bottom: 5px;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+        }
+
+        /* 添加文明按钮容器样式 */
+        #civilizationButtons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--panel-bg);
+            border-radius: var(--border-radius);
+        }
+
+        .civ-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .civ-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .civ-icon {
+            font-size: 1.2em;
+        }
+
+        /* 添加模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: var(--panel-bg);
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .close-button:hover {
+            color: #FF5252;
+            transform: scale(1.1);
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .modal-tab {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-tab.active {
+            background: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        /* 添加 AI Agent 提示词按钮样式 */
+        .ai-prompt-button {
+            background: #9C27B0;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-prompt-button:hover {
+            background: #7B1FA2;
+        }
+
+        /* AI Agent 提示词模态框样式 */
+        .ai-prompt-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+        }
+
+        .ai-prompt-content {
+            position: relative;
+            background: var(--panel-bg);
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: var(--border-radius);
+        }
+
+        .ai-prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-prompt-text {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .civilization-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .civilization-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .civilization-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .ai-params-button {
+            background: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .ai-params-button:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+        }
+
+        .params-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .params-tab {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .params-tab.active {
+            background: #2196F3;
+        }
+
+        .params-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .param-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .param-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .param-name {
+            font-weight: bold;
+            color: #81D4FA;
+        }
+
+        .param-value {
+            font-family: monospace;
+            color: #4CAF50;
+        }
+
+        .algorithm-section {
+            margin-bottom: 20px;
+        }
+
+        .algorithm-code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .formula {
+            font-family: monospace;
+            background: rgba(33, 150, 243, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="testInterface">
+        <!-- 添加 AI Agent 提示词按钮 -->
+        <div class="control-panel">
+            <button id="showAIParams" class="ai-params-button">
+                <span>📊</span>
+                <span>查看AI文明算法与参数</span>
+            </button>
+        </div>
+
+        <!-- 添加文明按钮容器 -->
+        <div id="civilizationButtons">
+            <!-- 文明按钮将在这里动态生成 -->
+        </div>
+
+        <div class="test-panel">
+            <h2>文明AI响应测试</h2>
+            <textarea id="eventInput" placeholder="输入一个世界事件进行测试...">世界大战爆发了，各个文明如何应对？</textarea>
+            <button id="submitEvent">提交事件</button>
+        </div>
+        
+        <div class="debug-panel">
+            <h3>调试信息</h3>
+            <pre id="debugInfo" style="background: rgba(0,0,0,0.3); padding: 10px; max-height: 200px; overflow-y: auto;"></pre>
+        </div>
+        
+        <div id="responsesPanel">
+            <!-- AI响应将在这里显示 -->
+        </div>
+
+        <!-- 添加模态框结构 -->
+        <div id="civilizationModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h3 id="modalTitle"></h3>
+                <div class="modal-tabs">
+                    <button class="modal-tab active" data-tab="basic">基本信息</button>
+                    <button class="modal-tab" data-tab="social">社会状态</button>
+                    <button class="modal-tab" data-tab="culture">文化特征</button>
+                    <button class="modal-tab" data-tab="conflicts">社会矛盾</button>
+                </div>
+                <div id="modalContent">
+                    <div class="tab-content active" data-tab="basic"></div>
+                    <div class="tab-content" data-tab="social"></div>
+                    <div class="tab-content" data-tab="culture"></div>
+                    <div class="tab-content" data-tab="conflicts"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加 AI Agent 提示词模态框 -->
+        <div id="aiPromptModal" class="ai-prompt-modal">
+            <div class="ai-prompt-content">
+                <div class="ai-prompt-header">
+                    <h3>AI Agent 提示词</h3>
+                    <button class="close-button">×</button>
+                </div>
+                <div class="civilization-buttons">
+                    <!-- 文明按钮将在这里动态生成 -->
+                </div>
+                <div id="promptContent">
+                    <!-- 提示词内容将在这里显示 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 修改模态框标题和内容结构 -->
+        <div id="aiParamsModal" class="ai-params-modal">
+            <div class="ai-params-content">
+                <div class="ai-params-header">
+                    <h3>AI文明算法与参数</h3>
+                    <button class="close-button">×</button>
+                </div>
+                <div class="civilization-buttons">
+                    <!-- 文明按钮将在这里动态生成 -->
+                </div>
+                <div id="paramsContent">
+                    <div class="params-tabs">
+                        <button class="params-tab active" data-tab="basic">基础参数</button>
+                        <button class="params-tab" data-tab="social">社会系统</button>
+                        <button class="params-tab" data-tab="personality">性格特征</button>
+                        <button class="params-tab" data-tab="algorithm">决策算法</button>
+                    </div>
+                    <div class="params-content">
+                        <!-- 参数内容将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局配置
+        const CONFIG = {
+            API_KEY: 'sk-2f992e9a603b4c9d9e6548a5fb6a1761',
+            API_ENDPOINT: 'https://api.deepseek.com/v1/chat/completions'
+        };
+    </script>
+    <script src="ai-prompts.js"></script>
+    <script src="civilization-ai.js"></script>
+    <script src="civilization.js"></script>
+    <script src="ai-character.js"></script>
+    <script src="ai-service.js"></script>
+    <script src="event-handler.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // 等待所有脚本加载完成
+        window.addEventListener('load', () => {
+            try {
+                // 创建游戏实例
+                const game = new Game();
+                window.game = game; // 保存到全局变量，方便调试
+
+                // 获取UI元素
+                const eventInput = document.getElementById('eventInput');
+                const submitButton = document.getElementById('submitEvent');
+                const responsesPanel = document.getElementById('responsesPanel');
+
+                // 调试日志函数
+                function logDebug(message, data = null) {
+                    const debugInfo = document.getElementById('debugInfo');
+                    const timestamp = new Date().toLocaleTimeString();
+                    const logMessage = data ? 
+                        `[${timestamp}] ${message}\n${JSON.stringify(data, null, 2)}` :
+                        `[${timestamp}] ${message}`;
+                    
+                    debugInfo.textContent = logMessage + '\n' + debugInfo.textContent;
+                }
+
+                // 事件处理
+                submitButton.addEventListener('click', async () => {
+                    const eventText = eventInput.value.trim();
+                    if (eventText) {
+                        logDebug('提交事件:', eventText);
+                        
+                        // 清空之前的响应
+                        responsesPanel.innerHTML = '';
+                        
+                        // 为每个文明创建响应面板
+                        game.civilizations.forEach(civ => {
+                            const responseDiv = document.createElement('div');
+                            responseDiv.className = 'civilization-response';
+                            responseDiv.setAttribute('data-civ', civ.name);
+                            responseDiv.style.borderColor = civ.color;
+                            responseDiv.innerHTML = `
+                                <div class="response-header">
+                                    <h3>${civ.name}</h3>
+                                </div>
+                                <div class="thinking">
+                                    <span>🤔 正在分析事件...</span>
+                                </div>
+                            `;
+                            responsesPanel.appendChild(responseDiv);
+                            logDebug(`创建${civ.name}的响应面板`);
+                        });
+
+                        try {
+                            // 处理事件
+                            await game.eventHandler.handleEvent(eventText);
+                            logDebug('所有文明已响应完成');
+                        } catch (error) {
+                            logDebug('错误:', error.message);
+                            console.error(error);
+                        }
+                    }
+                });
+
+                console.log('Test environment initialized successfully');
+                logDebug('测试环境初始化完成');
+
+                // 修改按钮点击事件处理
+                const showAIParamsButton = document.getElementById('showAIParams');
+                const aiParamsModal = document.getElementById('aiParamsModal');
+                const closeButton = aiParamsModal.querySelector('.close-button');
+                const civilizationButtons = aiParamsModal.querySelector('.civilization-buttons');
+                const paramsContent = document.getElementById('paramsContent');
+
+                showAIParamsButton.addEventListener('click', () => {
+                    // 生成文明按钮
+                    civilizationButtons.innerHTML = game.civilizations.map(civ => `
+                        <button class="civilization-button" style="background-color: ${civ.color}" data-civ="${civ.name}">
+                            <span>🏛️</span>
+                            <span>${civ.name}</span>
+                        </button>
+                    `).join('');
+
+                    // 添加按钮点击事件
+                    civilizationButtons.querySelectorAll('.civilization-button').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const civName = button.getAttribute('data-civ');
+                            const civilization = game.civilizations.find(c => c.name === civName);
+                            if (civilization) {
+                                showCivilizationParams(civilization);
+                            }
+                        });
+                    });
+
+                    aiParamsModal.style.display = 'block';
+                });
+
+                function showCivilizationParams(civilization) {
+                    const content = paramsContent.querySelector('.params-content');
+                    content.innerHTML = `
+                        <div class="params-section">
+                            <h4>基础参数</h4>
+                            <div class="params-grid">
+                                <div class="param-item">
+                                    <div class="param-header">
+                                        <span class="param-name">人口</span>
+                                        <span class="param-value">${civilization.population.toLocaleString()}</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: ${(civilization.population/2000000000)*100}%"></div>
+                                    </div>
+                                </div>
+                                <!-- ... 其他基础参数 ... -->
+                            </div>
+                        </div>
+
+                        <div class="params-section">
+                            <h4>决策算法</h4>
+                            <div class="algorithm-section">
+                                <h5>性格计算公式</h5>
+                                <div class="formula">
+                                    aggression = base_value + political_factor + cultural_factor + military_factor
+                                </div>
+                                <div class="algorithm-code">
+                                    // 攻击性计算
+                                    calculateAggression(traits) {
+                                        let score = 0.5; // 基础值
+                                        if (traits.governmentType.includes('军事')) score += 0.2;
+                                        if (traits.governmentType.includes('和平')) score -= 0.2;
+                                        // ... 其他因素
+                                        return Math.max(0, Math.min(1, score));
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="params-section">
+                            <h4>社会系统参数</h4>
+                            <div class="params-grid">
+                                ${Object.entries(civilization.society).map(([key, value]) => `
+                                    <div class="param-item">
+                                        <div class="param-header">
+                                            <span class="param-name">${formatParamName(key)}</span>
+                                            <span class="param-value">${Math.round(value * 100)}%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress" style="width: ${value * 100}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                function formatParamName(param) {
+                    const nameMap = {
+                        stability: "稳定性",
+                        happiness: "幸福度",
+                        education: "教育水平",
+                        healthcare: "医疗水平",
+                        // ... 其他参数映射
+                    };
+                    return nameMap[param] || param;
+                }
+
+                // 关闭模态框
+                closeButton.addEventListener('click', () => {
+                    aiParamsModal.style.display = 'none';
+                });
+
+                // 点击模态框外部关闭
+                aiParamsModal.addEventListener('click', (event) => {
+                    if (event.target === aiParamsModal) {
+                        aiParamsModal.style.display = 'none';
+                    }
+                });
+
+            } catch (error) {
+                console.error('Test initialization error:', error);
+                document.body.innerHTML += `
+                    <div style="color: red; padding: 20px;">
+                        初始化错误: ${error.message}
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html> 

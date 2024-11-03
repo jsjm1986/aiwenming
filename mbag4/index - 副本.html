@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>文明模拟</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --background-dark: #1a1a1a;
+            --panel-bg: rgba(30, 30, 30, 0.95);
+            --text-color: #ffffff;
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-dark);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        #gameInterface {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+        }
+
+        .top-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .control-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .button-icon {
+            font-size: 20px;
+        }
+
+        .civilization-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .civ-button {
+            position: relative;
+            padding: 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            color: white;
+            cursor: pointer;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            gap: 10px;
+            background: linear-gradient(45deg, rgba(0,0,0,0.7), rgba(0,0,0,0.3));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .civ-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .civ-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .civ-icon {
+            font-size: 24px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        .civ-name {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .civ-traits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .civ-trait {
+            font-size: 12px;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+
+        .civ-description {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        .civ-values {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .civ-value {
+            font-size: 11px;
+            padding: 3px 6px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+        }
+
+        #eventPanel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #eventInput {
+            width: 100%;
+            min-height: 80px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        #eventInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        #submitEvent {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #submitEvent:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        #submitEvent:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            width: 80%;
+            max-width: 800px;
+            margin: 50px auto;
+            background: var(--panel-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+
+        .info-section:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .stats-grid, .traits-container, .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stat-item, .trait-tag, .tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover, .trait-tag:hover, .tag:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress {
+            height: 100%;
+            transition: width 0.5s ease, background 0.5s ease;
+            position: relative;
+        }
+
+        .progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.2) 50%,
+                rgba(255,255,255,0) 100%
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(100%);
+            }
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .events-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .event-entry {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .event-entry:hover {
+            transform: translateX(5px);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .event-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .event-content {
+            color: var(--text-color);
+        }
+
+        .event-reactions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .reaction-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
+        }
+
+        .reaction-civilization {
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameInterface">
+        <div class="top-buttons">
+            <button id="historyButton" class="control-button">
+                <span class="button-icon">📜</span>
+                历史事件
+            </button>
+        </div>
+
+        <div id="civilizationButtons" class="civilization-buttons">
+            <!-- 华夏文明 -->
+            <button class="civ-button" style="background-color: rgba(255,87,34,0.2);" data-civ="华夏文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🏛️</span>
+                    <span class="civ-name">华夏文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">儒家文明</span>
+                    <span class="civ-trait">东方文明</span>
+                    <span class="civ-trait">农耕文明</span>
+                </div>
+                <div class="civ-description">
+                    以中庸之道为核心，强调和谐统一、礼仪传统的古老文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">中庸之道</span>
+                    <span class="civ-value">礼仪之邦</span>
+                    <span class="civ-value">天人合一</span>
+                </div>
+            </button>
+
+            <!-- 欧洲文明 -->
+            <button class="civ-button" style="background-color: rgba(33,150,243,0.2);" data-civ="欧洲文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🏛️</span>
+                    <span class="civ-name">欧洲文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">基督教文明</span>
+                    <span class="civ-trait">西方文明</span>
+                    <span class="civ-trait">工业文明</span>
+                </div>
+                <div class="civ-description">
+                    以个人主义、理性主义为基础，强调民主自由的现代文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">个人主义</span>
+                    <span class="civ-value">理性主义</span>
+                    <span class="civ-value">人权自由</span>
+                </div>
+            </button>
+
+            <!-- 伊斯兰文明 -->
+            <button class="civ-button" style="background-color: rgba(76,175,80,0.2);" data-civ="伊斯兰文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🕌</span>
+                    <span class="civ-name">伊斯兰文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">伊斯兰文明</span>
+                    <span class="civ-trait">宗教文明</span>
+                    <span class="civ-trait">沙漠文明</span>
+                </div>
+                <div class="civ-description">
+                    以伊斯兰教义为核心，强调信仰与道德的宗教文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">信仰至上</span>
+                    <span class="civ-value">宗教法治</span>
+                    <span class="civ-value">道德伦理</span>
+                </div>
+            </button>
+
+            <!-- 印度文明 -->
+            <button class="civ-button" style="background-color: rgba(156,39,176,0.2);" data-civ="印度文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🕉️</span>
+                    <span class="civ-name">印度文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">印度文明</span>
+                    <span class="civ-trait">河流文明</span>
+                    <span class="civ-trait">精神文明</span>
+                </div>
+                <div class="civ-description">
+                    以精神解脱为追求，强调多元包容的哲学文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">精神解脱</span>
+                    <span class="civ-value">轮回转世</span>
+                    <span class="civ-value">业力因果</span>
+                </div>
+            </button>
+
+            <!-- 非洲文明 -->
+            <button class="civ-button" style="background-color: rgba(0,150,136,0.2);" data-civ="非洲文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🌍</span>
+                    <span class="civ-name">非洲文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">非洲文明</span>
+                    <span class="civ-trait">部落文明</span>
+                    <span class="civ-trait">自然文明</span>
+                </div>
+                <div class="civ-description">
+                    以社群精神为纽带，强调自然和谐的原始文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">社群精神</span>
+                    <span class="civ-value">自然和谐</span>
+                    <span class="civ-value">口述传统</span>
+                </div>
+            </button>
+
+            <!-- 美洲文明 -->
+            <button class="civ-button" style="background-color: rgba(244,67,54,0.2);" data-civ="美洲文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🗽</span>
+                    <span class="civ-name">美洲文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">新大陆文明</span>
+                    <span class="civ-trait">移民文明</span>
+                    <span class="civ-trait">技文明</span>
+                </div>
+                <div class="civ-description">
+                    以自由民主为理念，强调创新发展的现代文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">自由民主</span>
+                    <span class="civ-value">个人主义</span>
+                    <span class="civ-value">创新精神</span>
+                </div>
+            </button>
+
+            <!-- 大洋洲文明 -->
+            <button class="civ-button" style="background-color: rgba(255,193,7,0.2);" data-civ="大洋洲文明">
+                <div class="civ-header">
+                    <span class="civ-icon">🌊</span>
+                    <span class="civ-name">大洋洲文明</span>
+                </div>
+                <div class="civ-traits">
+                    <span class="civ-trait">海洋文明</span>
+                    <span class="civ-trait">环保文明</span>
+                    <span class="civ-trait">多元文明</span>
+                </div>
+                <div class="civ-description">
+                    以环境保护为使命，强调多元包容的现代文明
+                </div>
+                <div class="civ-values">
+                    <span class="civ-value">环境保护</span>
+                    <span class="civ-value">多元包容</span>
+                    <span class="civ-value">社会公平</span>
+                </div>
+            </button>
+        </div>
+        
+        <div id="eventPanel">
+            <textarea id="eventInput" placeholder="描述一个将要发生的世界事件..."></textarea>
+            <button id="submitEvent">提交事件</button>
+        </div>
+    </div>
+
+    <div id="civilizationModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <h2 id="modalTitle"></h2>
+            <div class="modal-tabs">
+                <button class="tab-button active" data-tab="basic">基本信息</button>
+                <button class="tab-button" data-tab="social">社会状态</button>
+                <button class="tab-button" data-tab="economy">经济发展</button>
+                <button class="tab-button" data-tab="culture">文化特征</button>
+                <button class="tab-button" data-tab="conflicts">社会矛盾</button>
+            </div>
+            <div id="modalContent">
+                <!-- 标签内容将通过 JS 动态添加 -->
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>世界历史事件</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="events-container">
+                    <!-- 事件列表将通过 JS 动态添加 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="eventLog" class="side-panel">
+        <h2>历史事件</h2>
+        <div class="events-container"></div>
+    </div>
+
+    <script src="civilization.js"></script>
+    <script src="civilization-ai.js"></script>
+    <script src="ai-service.js"></script>
+    <script src="game.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                window.game = new Game();
+                console.log('Game initialized successfully');
+            } catch (error) {
+                console.error('Game initialization error:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = `初始化错误: ${error.message}`;
+                document.body.appendChild(errorDiv);
+            }
+        });
+
+        document.getElementById('historyButton').addEventListener('click', () => {
+            const historyModal = document.getElementById('historyModal');
+            const eventsContainer = historyModal.querySelector('.events-container');
+            
+            // 获取并显示历史事件
+            const events = window.game.worldEvents;
+            eventsContainer.innerHTML = events.map(event => `
+                <div class="event-entry">
+                    <div class="event-time">${new Date(event.timestamp).toLocaleString()}</div>
+                    <div class="event-content">${event.content}</div>
+                    ${event.reactions ? `
+                        <div class="event-reactions">
+                            ${event.reactions.map(reaction => `
+                                <div class="reaction-item">
+                                    <div class="reaction-civilization">${reaction.civilization}</div>
+                                    <div class="reaction-content">${reaction.reaction.analysis.reasoning}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            historyModal.style.display = 'block';
+        });
+
+        // 添加关闭模态框的事件处理
+        document.querySelectorAll('.close-modal').forEach(button => {
+            button.addEventListener('click', () => {
+                button.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // 点击模态框外部关闭
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
